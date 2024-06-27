@@ -93,7 +93,7 @@ Methods:
   * `String url`: The url to store
 
 * Returns:
-  * `String` The id that was used to store the url
+  * `String`: The id that was used to store the url
 
 ### Classes
 
@@ -201,7 +201,7 @@ Constructor:
 ```
 
 * Parameters:
-  * `IURLStore store`: The store to use to get full urls
+  * `IURLStore store`: The store to use to get a full url from a short code
 
 Methods:
 
