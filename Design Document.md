@@ -1,65 +1,298 @@
 # URL Shortening Service Design Document
 
-## Goal
+## Introduction
 
-The goal is to generate a URL shortening service.
+This design document outlines the design for a URL shortening service that allows users to shorten long URLs.
 
-To shorten a URL, use a ?shorten query string; for example, <http://www.example.com/?shorten=http://some.url/etc/> will return a shortened URL <http://www.example.com/jhakdj>
+To shorten a url a request is made to the base url of the application with the query string `?shorten=http://url_to_shorten.com`, this will return the shortened url.
 
-To expand a URL simply request the shortened URL e.g. <http://www.example.com/jhakdj> and the system will redirect to the expanded URL.
+When a shortened URL is navigated to the response will redirect to the original URL, if there is a + on the end of shortened URL then just the original URL should be returned.
 
-To view the expanded URL without redirecting to it, simply add a + to the end of the URL, e.g. <http://www.example.com/xhgjgh+>
-
-The solution will need to be highly scalable because it will need to handle at least 1 million requests per day, with peak traffic of 50 hits per second.
+The service will need to be able to handle up to 1 million requests per day with peak traffic of 50 hits per second.
 
 ## Assumptions
 
-* There is no need for a web frontend that consumes the service
+* There is no need for a web frontend that consumes the service.
+* There are no specific additional security requirements for data protection.
 
 ## Technologies
 
-### AWS Lambda
+### AWS Services
 
-### DynamoDB
+* API Gateway - For handling HTTP requests.
+* Lambda - For executing code without provisioning servers.
+* DynamoDB - For storing the URLs and their generated short-form codes.
 
-DynamoDB offers a fast and highly scalable solution for storing our urls and their respective short codes.
+Using AWS Lambda functions will provide significant scalability benefits to the application. Lambda functions allow the backend to automatically scale in response to load ensuring high availability and performance without the need for manual intervention.
 
-### AWS API Gateway
+### Libraries
 
-API Gateway allows for us to expose the URL shortening service as a RESTful API and integrates directly with AWS Lambda functions, our API Gateway setup will look like:
+* Java SDK for AWS: To interact with AWS services.
 
-`POST ?shorten <shorten_url_lambda_function`
+## Data Persistence
 
-`GET /{shortened_url} <redirect_or_return_url_lamda_function>`
+The urls and their short-form codes will be stored in a DynamoDB table.
+
+### Table Schema
+
+```yml
+Table Name: URLMappings
+Primary Key: ShortCode (String)
+Attributes:
+  - OriginalURL (String)
+  - CreatedAt (Timestamp)
+```
+
+### Example Record
+
+| ShortCode | OriginalURL | CreatedAt |
+| --------- | ----------- | --------- |
+| uk34dm | <https://www.google.com> | 2024-06-26T13:27:51.413Z |
+
+The main benefit of using DynamoDB is its scalability, it can store a vast amount of records will little degradation of performance.
 
 ## Language
 
 The Lambda functions will be written in Java, this ensures the team can get up and running quickly without having to be trained on a language that they are not as well equipped to use.
 
-## Classes
+## Code Design
+
+### Interfaces
+
+#### ICodeGenerator
+
+Methods:
+
+```java
+  public String generate ()
+```
+
+* Returns:
+  * `String`: The generated short code
+
+#### IURLStore
+
+Methods:
+
+```java
+  public String get (String id)
+```
+
+* Parameters:
+  * `String id`: The unique ID to get the url for
+
+* Returns:
+  * `String`: The url that was found with a matching ID
+
+```java
+  public String store (String id, String url)
+```
+
+* Parameters:
+  * `String id`: The unique ID to store the url with
+  * `String url`: The url to store
+
+* Returns:
+  * `String` The id that was used to store the url
+
+### Classes
+
+### ShortCodeGenerator
+
+The `ShortCodeGenerator` implements the `ICodeGenerator` interface.
+
+Methods:
+
+```java
+  public String generate ()
+```
+
+* Returns:
+  * `String`: The generated short code
+
+#### Generating A Short Code
+
+1. Define the character set, using the a-z, A-z and 0-9 characters.
+2. Randomly select 6 characters
+3. Join them together into a single string and return the result
 
 ### URLShortener
 
-The `URLShortener` class should have a single `shorten(url)` method, that takes a url and returns a short code generated from the url.
+This class is responsible for the url shortening process, it takes a url generates a unique ID,  stores the ID and url in the database, then returns the shortened url.
 
-// TODO: Explain the algorithm used to generate the short code.
+Constructor:
 
-### IURLStore
+```java
+  public constructor (IURLStore store, ICodeGenerator codeGenerator)
+```
 
-The `IURLStore` interface is an interface definition for interacting with storage, classes that implement it will be reponsible for inserting urls and their accompanying code into their storage medium.
+* Parameters:
+  * `IURLStore store`: The store for the urls and their short codes
+  * `ICodeGenerator codeGenerator`: The generator to use to generate the short codes
+
+Methods:
+
+```java
+  public String shorten (String url)  
+```
+
+* Parameters:
+  * `String url`: The url to shorten
+
+* Returns:
+  * `String`: The fully formed short url
+
+```java
+  private String getUniqueShortCode ()
+```
+
+* Returns:
+  * `String`: The unique short code
+
+Note: This method utilizes the generator to produce a short code and subsequently checks if the generated code is already in use within the store. If the code is available, it is returned. If not, the method continues generating codes until a unique one is identified and returned.
 
 ### URLDynamoDBStore
 
-The `URLDynamoDBStore` should implement the `IURLStore` interface, with implementations for `get` and `store` specific to DynamoDB.  
+The `URLDynamoDBStore` implements the `IURLStore` interface.
 
-### URL Validator
+Methods:
 
-The `URLValidator` should have a single `validate(url)` method that is resposible for determining if the passed in url is a valid url or not.
+```java
+public String get (String id)
+```
+
+* Parameters:
+  * `String id`: The short code of the url to retrieve
+
+* Returns:
+  * `String`: The full url for the passed link
+
+```java
+  public String store (String id, String url) 
+```
+
+* Parameters:
+  * `String id` The id to store the url against
+  * `String url` The url to store
+
+* Returns:
+  * `String` The id that the url was stored at
+
+### URLValidator
+
+Methods:
+
+```java
+  public Boolean isValid (String url)
+```
+
+* Parameters:
+  * `String url` The url to validate
+
+* Returns:
+  * A boolean to indicate if the url is valid
 
 ### URLRedirector
 
-The URLRedirector class is responsible for redirecting the current request to a given url, in the constructor it should take the active request, with a method called redirect(url) that performs the redirect.
+Constructor:
 
-## Deployment
+```java
+  public constructor (IURLStore store) 
+```
+
+* Parameters:
+  * `IURLStore store`: The store to use to get full urls
+
+Methods:
+
+```java
+  public APIGatewayProxyResponseEvent redirectFromShortCode (String shortCode)
+```
+
+* Parameters:
+  * `String shortCode` The short code of the url you want to redirect to
+
+* Returns:
+  * `APIGatewayProxyResponseEvent` The generated response to return from the Lambda function to perform a redirect to the full url.
+
+### APIHandler
+
+The API Handler class should implement `RequestHandler<APIGatewayProxyRequestEvent, APIGatewayProxyResponseEvent>` and is responsible for handling the incoming request.
+
+Methods:
+
+```java
+  public APIGatewayProxyResponseEvent handleRequest (APIGatewayProxyRequestEvent request, Context context)
+```
+
+* Parameters:
+  * `APIGatewayProxyRequestEvent request`: The request that has been made
+  * `Context context`: The request context
+
+* Returns:
+  * `APIGatewayProxyResponseEvent`: The response to send
+
+The handleRequest function should determine the type of request is it a request to shorten/redirect/get and invoke the neccessary class methods to do so.
+
+## Factories
+
+### URLStoreFactory
+
+This factory is resposible for creating an instance of the class we'll use for persisting the URLs in the the application, initially this will just be an instance of the URLDynamoDBStore, this approach allows us to switch database technologies simply by switching the class that we create an instance of.
+
+Methods:
+
+```java
+  public IURLStore build ()
+```
+
+* Returns:
+  * IURLStore An instance of a class that implements the IURLStore interface
+
+### CodeGeneratorFactory
+
+This factory is reponsible for creating an instance of a class that implements the ICodeGenerator interface, which will initally be an instance of the ShortCodeGenerator class. This approach allows us to switch to using a different method for generating short codes.
+
+Methods:
+
+```java
+  public ICodeGenerator build ()
+```
+
+* Returns:
+  * ICodeGenerator An instance of a class that implements the ICodeGenerator interface
+
+### URLShortenerFactory
+
+This factory should create an instance of the URLShortener class passing in instances of classes built by the URLStoreFactory and CodeGeneratorFactory as parameters.
+
+Methods:
+
+```java
+  public URLShortener build ()
+```
+
+* Returns:
+  * URLShortener An instance of the URLShortener
 
 ## Cost
+
+Using the AWS Pricing Calculator the following price estimates have been produced. All prices are before tax.
+
+### Services
+
+| Service Name | Upfront Cost | Monthly Cost |
+| --------- | ----------- | --------- |
+| Amazon API Gateway | 0.00 USD | 35.29 USD |
+| AWS Lambda | 0.00 USD | 6.08 USD |
+| Amazon DynamoDB | 0.00 USD | 4.83 USD |
+
+This is based on 1 million daily requests, with 1/100 requests being shorten requests rather than a redirect, the difference being redirect does not require a write to the database. The Lambda function has been provisioned with
+
+### Totals
+
+Total Upfront Cost: **0.00 USD**
+
+Monthly Cost: **46.20 USD**
+
+Yearly Cost **554.40 USD**
