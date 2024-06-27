@@ -49,11 +49,11 @@ Attributes:
 | --------- | ----------- | --------- |
 | uk34dm | <https://www.google.com> | 2024-06-26T13:27:51.413Z |
 
-The main benefit of using DynamoDB is its scalability, it can store a vast amount of records will little degradation of performance.
+The main benefit of using DynamoDB is its scalability, it can store a vast amount of records with little degradation of performance.
 
 ## Language
 
-The Lambda functions will be written in Java, this ensures the team can get up and running quickly without having to be trained on a language that they are not as well equipped to use.
+The Lambda function will be written in Java, this ensures the team can get up and running quickly without having to be trained on a language that they are not as well equipped to use.
 
 ## Code Design
 
@@ -172,11 +172,11 @@ public String get (String id)
 ```
 
 * Parameters:
-  * `String id` The id to store the url against
-  * `String url` The url to store
+  * `String id`: The id to store the url against
+  * `String url`: The url to store
 
 * Returns:
-  * `String` The id that the url was stored at
+  * `String`: The id that the url was stored at
 
 ### URLValidator
 
@@ -187,10 +187,10 @@ Methods:
 ```
 
 * Parameters:
-  * `String url` The url to validate
+  * `String url`: The url to validate
 
 * Returns:
-  * A boolean to indicate if the url is valid
+  * `Boolean`: A boolean to indicate if the url is valid
 
 ### URLRedirector
 
@@ -210,10 +210,10 @@ Methods:
 ```
 
 * Parameters:
-  * `String shortCode` The short code of the url you want to redirect to
+  * `String shortCode`: The short code of the url you want to redirect to
 
 * Returns:
-  * `APIGatewayProxyResponseEvent` The generated response to return from the Lambda function to perform a redirect to the full url.
+  * `APIGatewayProxyResponseEvent`: The generated response to return from the Lambda function to perform a redirect to the full url.
 
 ### APIHandler
 
@@ -232,13 +232,13 @@ Methods:
 * Returns:
   * `APIGatewayProxyResponseEvent`: The response to send
 
-The handleRequest function should determine the type of request is it a request to shorten/redirect/get and invoke the neccessary class methods to do so.
+The handleRequest function should determine the type of request is it a request to shorten/redirect/get and invoke the necessary class methods to do so.
 
 ## Factories
 
 ### URLStoreFactory
 
-This factory is resposible for creating an instance of the class we'll use for persisting the URLs in the the application, initially this will just be an instance of the URLDynamoDBStore, this approach allows us to switch database technologies simply by switching the class that we create an instance of.
+This factory is responsible for creating an instance of the class we'll use for persisting the URLs in the the application, initially this will just be an instance of the URLDynamoDBStore, this approach allows us to switch database technologies simply by switching the class that we create an instance of.
 
 Methods:
 
@@ -247,11 +247,11 @@ Methods:
 ```
 
 * Returns:
-  * IURLStore An instance of a class that implements the IURLStore interface
+  * IURLStore: An instance of a class that implements the IURLStore interface
 
 ### CodeGeneratorFactory
 
-This factory is reponsible for creating an instance of a class that implements the ICodeGenerator interface, which will initally be an instance of the ShortCodeGenerator class. This approach allows us to switch to using a different method for generating short codes.
+This factory is responsible for creating an instance of a class that implements the ICodeGenerator interface, which will initially be an instance of the ShortCodeGenerator class. This approach allows us to switch to using a different method for generating short codes.
 
 Methods:
 
@@ -260,7 +260,7 @@ Methods:
 ```
 
 * Returns:
-  * ICodeGenerator An instance of a class that implements the ICodeGenerator interface
+  * `ICodeGenerator`: An instance of a class that implements the ICodeGenerator interface
 
 ### URLShortenerFactory
 
@@ -273,13 +273,13 @@ Methods:
 ```
 
 * Returns:
-  * URLShortener An instance of the URLShortener
+  * `URLShortener`: An instance of the URLShortener
 
 ## Cost
 
 Using the AWS Pricing Calculator the following price estimates have been produced. All prices are before tax.
 
-### Services
+### Breakdown
 
 | Service Name | Upfront Cost | Monthly Cost |
 | --------- | ----------- | --------- |
