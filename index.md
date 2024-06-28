@@ -287,7 +287,7 @@ Using the AWS Pricing Calculator the following price estimates have been produce
 | AWS Lambda | 0.00 USD | 6.08 USD |
 | Amazon DynamoDB | 0.00 USD | 4.83 USD |
 
-This is based on 1 million daily requests, with 1/100 requests being shorten requests rather than a redirect, the difference being redirect does not require a write to the database. The Lambda function has been provisioned with
+This is based on 1 million daily requests, with 1/100 requests being shorten requests rather than a redirect, the difference being redirect does not require a write to the database. The Lambda function has been provisioned with 512mb of RAM.
 
 ### Totals
 
